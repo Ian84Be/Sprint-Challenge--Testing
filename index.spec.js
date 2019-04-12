@@ -9,8 +9,37 @@ describe('index.js', () => {
         expect(res.body.message).toBe('yaya');
     });
 
+    describe('GET /games', () => {
+        it('should respond 200', async () => {
+            const res = await req(server).get('/games');
+            expect(res.status).toBe(200);
+        });
+
+        it('should return an empty array even if no games are saved', async () => {
+            let res = await req(server).get('/games');
+            expect(res.status).toBe(200);
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body).toEqual([]);
+        });
+
+        it('should return a list of games in an array', async () => {
+            const game = {
+                title: 'Pacman', // required
+                genre: 'Arcade', // required
+                releaseYear: 1980 // not required
+                };
+            let res = await req(server).post('/games').send(game);
+            expect(res.status).toBe(201);
+
+            res = await req(server).get('/games');
+            expect(res.status).toBe(200);
+            expect(Array.isArray(res.body)).toBe(true);
+            expect(res.body).toEqual(expect.arrayContaining([game]));
+        });
+    });
+
     describe('POST /games', () => {
-        it('should accept a new game with or without releaseYear', async () => {
+        it('should accept a new game with required fields', async () => {
             const game = {
                 title: 'Pacman', // required
                 genre: 'Arcade', // required
@@ -18,7 +47,9 @@ describe('index.js', () => {
               };
             let res = await req(server).post('/games').send(game);
             expect(res.status).toBe(201);
+        });
 
+        it('should accept a game without release year', async () => {
             const game2 = {
                 title: 'Pacman', // required
                 genre: 'Arcade', // required
@@ -27,7 +58,7 @@ describe('index.js', () => {
             expect(res.status).toBe(201);
         });
 
-        it('should respond 422 if required fields are missing', async () => {
+        it('should respond 422 if any required fields are missing', async () => {
             const game = {
                 genre: 'Arcade', // required
                 releaseYear: 1980 // not required
@@ -40,6 +71,12 @@ describe('index.js', () => {
                 releaseYear: 1980 // not required
               };
             res = await req(server).post('/games').send(game2);
+            expect(res.status).toBe(422);
+
+            const game3 = {
+                releaseYear: 1980 // not required
+              };
+            res = await req(server).post('/games').send(game3);
             expect(res.status).toBe(422);
         });
     });
