@@ -3,6 +3,10 @@ const req = require('supertest');
 const server = require('./index.js');
 
 describe('index.js', () => {
+    beforeEach(async () => {
+        await req(server).post('/clear');
+    });
+
     it('responds 200 yaya', async () => {
         const res = await req(server).get('/');
         expect(res.status).toBe(200);
@@ -39,20 +43,21 @@ describe('index.js', () => {
     });
 
     describe('POST /games', () => {
-        it('should accept a new game with required fields', async () => {
+        it('should accept a new game with ONLY required fields', async () => {
             const game = {
-                title: 'Pacman', // required
-                genre: 'Arcade', // required
-                releaseYear: 1980 // not required
+                title: 'zPacman', // required
+                genre: 'zArcade', // required
               };
             let res = await req(server).post('/games').send(game);
             expect(res.status).toBe(201);
         });
 
-        it('should accept a game without release year', async () => {
+        it('should accept a game with additional unrequired fields', async () => {
             const game2 = {
-                title: 'Pacman', // required
-                genre: 'Arcade', // required
+                title: 'zazPacman', // required
+                genre: 'Azazrcade', // required
+                releaseYear: 1980, // not required
+                rating:'7/10'
               };
             res = await req(server).post('/games').send(game2);
             expect(res.status).toBe(201);
@@ -78,6 +83,21 @@ describe('index.js', () => {
               };
             res = await req(server).post('/games').send(game3);
             expect(res.status).toBe(422);
+        });
+
+        it('should respond 405 if game title already exists', async () => {
+            const game = {
+                title: '1945', // required
+                genre: 'Arcade', // required
+              };
+            let res = await req(server).post('/games').send(game);
+
+            const game2 = {
+                title: '1945', // required
+                genre: 'zzArcadezz', // required
+            };
+            res = await req(server).post('/games').send(game2);
+            expect(res.status).toBe(405);
         });
     });
 });
